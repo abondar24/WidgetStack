@@ -3,6 +3,7 @@ package org.abondar.industrial.widgetstack.service;
 import org.abondar.industrial.widgetstack.exception.NullAtrributeException;
 import org.abondar.industrial.widgetstack.exception.TooManyWidgetsException;
 import org.abondar.industrial.widgetstack.exception.WidgetNotFoundException;
+import org.abondar.industrial.widgetstack.model.Filter;
 import org.abondar.industrial.widgetstack.model.Widget;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -129,6 +130,33 @@ public class WidgetServiceTest {
 
         assertEquals(2, res.get(1).getzIndex());
         assertEquals(widget.getId(), res.get(1).getId());
+
+    }
+
+    @Test
+    public void testGetFiltered()throws Exception {
+        service.getStorage().clear();
+
+        var widget = new Widget(50, 50, 1, 100, 100);
+        service.create(widget);
+
+        var widget1 = new Widget(50, 100, 1, 100, 100);
+        service.create(widget1);
+
+        var widget2 = new Widget(100, 100, 1, 100, 100);
+        service.create(widget2);
+
+        var filter = new Filter();
+        filter.setxStart(0);
+        filter.setxStop(100);
+        filter.setyStart(0);
+        filter.setyStop(150);
+
+        var res = service.getFilteredWidgets(0, 3, false,filter);
+
+        assertEquals(2, res.size());
+        assertEquals(100, res.get(0).getyCoord());
+        assertEquals(50, res.get(1).getyCoord());
 
     }
 

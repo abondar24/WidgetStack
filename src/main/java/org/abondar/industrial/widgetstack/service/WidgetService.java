@@ -3,6 +3,7 @@ package org.abondar.industrial.widgetstack.service;
 import org.abondar.industrial.widgetstack.exception.NullAtrributeException;
 import org.abondar.industrial.widgetstack.exception.TooManyWidgetsException;
 import org.abondar.industrial.widgetstack.exception.WidgetNotFoundException;
+import org.abondar.industrial.widgetstack.model.Filter;
 import org.abondar.industrial.widgetstack.model.Widget;
 import org.abondar.industrial.widgetstack.repository.WidgetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,6 +178,25 @@ public class WidgetService {
 
         }
         return getWidgetsFromStorage(offset, limit);
+    }
+
+    public List<Widget> getFilteredWidgets(int offset, int limit, boolean fromDb, Filter filter) throws TooManyWidgetsException {
+        return getWidgets(offset, limit, fromDb)
+                .stream()
+                .filter(wd -> matchesFilter(filter, wd))
+                .collect(Collectors.toList());
+
+    }
+
+    private boolean matchesFilter(Filter filter, Widget widget) {
+
+        var fWidth = filter.getxStop() - filter.getyStart();
+        var fHeight = filter.getyStop() - filter.getyStart();
+
+        return widget.getWidth() <= fWidth && widget.getHeight() <= fHeight &&
+                filter.getxStop() > widget.getxCoord() &&
+                filter.getyStop() > widget.getyCoord();
+
     }
 
     private List<Widget> getWidgetsFromDb(int offset, int limit) {

@@ -3,6 +3,7 @@ package org.abondar.industrial.widgetstack.controller;
 import org.abondar.industrial.widgetstack.exception.NullAtrributeException;
 import org.abondar.industrial.widgetstack.exception.TooManyWidgetsException;
 import org.abondar.industrial.widgetstack.exception.WidgetNotFoundException;
+import org.abondar.industrial.widgetstack.model.Filter;
 import org.abondar.industrial.widgetstack.model.Widget;
 import org.abondar.industrial.widgetstack.service.WidgetService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ public class WidgetController {
     }
 
     @GetMapping(path = "/find/{id}")
+
     public ResponseEntity<Widget> findWidget(@PathVariable String id, @RequestParam(name = "db") boolean fromDb) {
         var res = service.getById(id, fromDb);
         return ResponseEntity.ok(res);
@@ -50,9 +52,17 @@ public class WidgetController {
     @GetMapping(path = "/find_many")
     public ResponseEntity<List<Widget>> findWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
-                                                    @RequestParam(name = "db") boolean fromDb)
+                                                    @RequestParam(name = "db") boolean fromDb,
+                                                    @RequestBody(required = false) Filter fp)
             throws TooManyWidgetsException {
-        var res = service.getWidgets(offset, limit,fromDb);
+
+        List<Widget> res;
+        if (fp!=null){
+            res = service.getFilteredWidgets(offset, limit,fromDb,fp);
+        } else {
+            res = service.getWidgets(offset, limit,fromDb);
+        }
+
         return ResponseEntity.ok(res);
     }
 

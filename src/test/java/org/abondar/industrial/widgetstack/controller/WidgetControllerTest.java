@@ -1,6 +1,7 @@
 package org.abondar.industrial.widgetstack.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.abondar.industrial.widgetstack.model.Filter;
 import org.abondar.industrial.widgetstack.model.Widget;
 import org.abondar.industrial.widgetstack.repository.WidgetRepository;
 import org.junit.jupiter.api.Test;
@@ -184,6 +185,35 @@ public class WidgetControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$",hasSize(2)));
+    }
+
+
+    @Test
+    public void testFindManFilter() throws Exception {
+        repository.deleteAll();
+
+        var widget = new Widget(50, 50, 1, 100, 100);
+        var body = mapper.writeValueAsString(widget);
+
+        mockMvc.perform(post("/widget/create")
+                .content(body)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        var filter = new Filter();
+        filter.setxStart(0);
+        filter.setxStop(100);
+        filter.setyStart(0);
+        filter.setyStop(150);
+        var filterBody = mapper.writeValueAsString(filter);
+
+
+        mockMvc.perform(get("/widget/find_many")
+                .queryParam("offset","0")
+                .queryParam("db","true")
+                .content(filterBody)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$",hasSize(1)));
     }
 
     @Test
