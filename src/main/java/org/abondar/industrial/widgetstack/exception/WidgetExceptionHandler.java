@@ -25,4 +25,10 @@ public class WidgetExceptionHandler extends ResponseEntityExceptionHandler {
     public void handleBadRequestAttrs(Exception ex,HttpServletResponse response) throws IOException {
         response.sendError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
     }
+
+    @ExceptionHandler({RateLimitException.class})
+    public void handleTooManyRequests(Exception ex,HttpServletResponse response) throws Exception {
+        response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(), ex.getMessage());
+    }
+
 }
