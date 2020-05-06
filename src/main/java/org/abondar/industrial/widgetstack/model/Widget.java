@@ -125,6 +125,6 @@ public class Widget implements Comparable<Widget>{
 
     @Override
     public int compareTo(Widget w) {
-        return w.zIndex-this.zIndex;
+        return this.zIndex-w.getzIndex();
     }
 }

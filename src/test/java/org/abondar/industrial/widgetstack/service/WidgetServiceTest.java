@@ -39,6 +39,8 @@ public class WidgetServiceTest {
 
     @Test
     public void testCreateNullZ() {
+        service.getStorage().clear();
+
         var widget = new Widget(1, 1, 1, 1, 1);
         service.create(widget);
 

@@ -12,10 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,9 +24,8 @@ import java.util.stream.Collectors;
 @Service
 public class WidgetService {
 
-    private final int MAX_LIMIT = 500;
     private final WidgetRepository repository;
-    private final List<Widget> storage;
+    private final Map<String, Widget> storage;
     @Value("${db-store}")
     private boolean dbStore;
 
@@ -33,7 +33,8 @@ public class WidgetService {
     @Autowired
     public WidgetService(WidgetRepository repository) {
         this.repository = repository;
-        this.storage = new ArrayList<>();
+        this.storage = Collections
+                .synchronizedMap(new LinkedHashMap<>(500, .75f, true));
 
     }
 
@@ -57,62 +58,37 @@ public class WidgetService {
     }
 
     private Integer getMaxZindex() {
-
-        return storage.isEmpty() ? Integer.MAX_VALUE : storage.stream()
-                .max(Collections.reverseOrder())
+        return storage.isEmpty() ? Integer.MAX_VALUE : storage.values()
+                .stream()
+                .min(java.util.Comparator.naturalOrder())
                 .get()
                 .getzIndex() + 1;
     }
 
     private void fillStorage(Widget widget) {
-        storage.sort(Collections.reverseOrder());
-
-
-        if (!storage.isEmpty()) {
-
-            var insertIndex = storage.indexOf(
-                    storage
-                            .stream()
-                            .filter(wd -> wd.getzIndex().equals(widget.getzIndex()))
-                            .findFirst()
-                            .orElseGet(() -> storage.get(storage.size() - 1)));
-
-            storage.add(insertIndex, widget);
-
-            for (int i = insertIndex + 1; i < storage.size(); i++) {
-                var elem = storage.get(i);
-                var zIndex = elem.getzIndex();
-                if (zIndex >= widget.getzIndex()) {
-                    elem.setzIndex(zIndex + 1);
+        storage.put(widget.getId(), widget);
+        if (storage.size()>1) {
+            storage.forEach((k,v)->{
+                var oldZIndex = v.getzIndex();
+                if (oldZIndex>=widget.getzIndex() && !v.getId().equals(widget.getId())){
+                    v.setzIndex(oldZIndex + 1);
                 }
-            }
-        } else {
-            storage.add(widget);
+            });
         }
-
     }
 
 
-    public synchronized Widget update(Widget widget,String id) throws WidgetNotFoundException, NullAtrributeException {
+    public synchronized Widget update(Widget widget, String id) throws WidgetNotFoundException, NullAtrributeException {
         checkWidget(widget);
 
-        var found = find(id);
-        if (found.isEmpty()) {
+        if (storage.get(id) == null) {
             throw new WidgetNotFoundException(widget.getId());
         }
 
         widget.setId(id);
         widget.setLastModified(new Date());
 
-        var replaceIndex = storage.indexOf(
-                storage.stream()
-                        .filter(wd -> wd.getId().equals(widget.getId()))
-                        .findFirst()
-                        .get()
-        );
-
-        storage.set(replaceIndex, widget);
-
+        storage.replace(id, widget);
         if (dbStore) {
             repository.save(widget);
         }
@@ -153,21 +129,19 @@ public class WidgetService {
 
     public Widget getById(String id, boolean fromDb) {
 
-        Optional<Widget> res;
         if (dbStore && fromDb) {
-            res = repository.findById(id);
+            Optional<Widget> res = repository.findById(id);
             if (res.isPresent()) {
                 return res.get();
             }
         }
 
-        res = find(id);
-
-        return res.orElse(null);
+        return storage.get(id);
     }
 
     public List<Widget> getWidgets(int offset, int limit, boolean fromDb) throws TooManyWidgetsException {
-        if (limit > MAX_LIMIT) {
+        int maxLimit = 500;
+        if (limit > maxLimit) {
             throw new TooManyWidgetsException();
         }
 
@@ -211,9 +185,10 @@ public class WidgetService {
     }
 
     private List<Widget> getWidgetsFromStorage(int offset, int limit) {
-        storage.sort(Collections.reverseOrder());
 
-        return storage.stream()
+        return storage.values()
+                .stream()
+                .sorted(Widget::compareTo)
                 .skip(offset)
                 .limit(limit)
                 .collect(Collectors.toList());
@@ -221,26 +196,19 @@ public class WidgetService {
 
 
     public synchronized void delete(String id) throws WidgetNotFoundException {
-        var widget = find(id);
-        if (widget.isEmpty()) {
+        var widget = storage.get(id);
+        if (widget == null) {
             throw new WidgetNotFoundException(id);
         }
 
-        storage.remove(widget.get());
+        storage.remove(id);
         if (dbStore) {
-            repository.delete(widget.get());
+            repository.delete(widget);
         }
     }
 
 
-    private Optional<Widget> find(String id) {
-        return storage
-                .stream()
-                .filter(wd -> wd.getId().equals(id))
-                .findFirst();
-    }
-
-    public List<Widget> getStorage() {
+    public Map<String, Widget> getStorage() {
         return storage;
     }
 }
