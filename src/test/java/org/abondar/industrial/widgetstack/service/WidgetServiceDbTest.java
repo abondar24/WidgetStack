@@ -57,7 +57,7 @@ public class WidgetServiceDbTest {
 
         res.setxCoord(3);
         res.setyCoord(4);
-        service.update(res);
+        service.update(res,res.getId());
 
         verify(repository, times(1)).save(widget);
         verify(repository, times(1)).save(res);

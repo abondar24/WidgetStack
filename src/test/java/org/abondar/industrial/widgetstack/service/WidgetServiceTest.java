@@ -83,7 +83,7 @@ public class WidgetServiceTest {
         widget.setxCoord(3);
         widget.setyCoord(4);
         Thread.sleep(300);
-        widget = service.update(widget);
+        widget = service.update(widget,widget.getId());
 
         assertEquals(3, widget.getxCoord());
         assertEquals(4, widget.getyCoord());
@@ -99,7 +99,7 @@ public class WidgetServiceTest {
         var res = service.create(widget);
 
         res.setxCoord(null);
-        assertThrows(NullAtrributeException.class, () -> service.update(res));
+        assertThrows(NullAtrributeException.class, () -> service.update(res,res.getId()));
     }
 
     @Test
@@ -108,7 +108,7 @@ public class WidgetServiceTest {
         var res = service.create(widget);
 
         res.setId("test");
-        assertThrows(WidgetNotFoundException.class, () -> service.update(res));
+        assertThrows(WidgetNotFoundException.class, () -> service.update(res,res.getId()));
     }
 
     @Test

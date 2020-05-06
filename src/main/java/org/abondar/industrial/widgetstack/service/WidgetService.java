@@ -93,14 +93,15 @@ public class WidgetService {
     }
 
 
-    public synchronized Widget update(Widget widget) throws WidgetNotFoundException, NullAtrributeException {
+    public synchronized Widget update(Widget widget,String id) throws WidgetNotFoundException, NullAtrributeException {
         checkWidget(widget);
 
-        var found = find(widget.getId());
+        var found = find(id);
         if (found.isEmpty()) {
             throw new WidgetNotFoundException(widget.getId());
         }
 
+        widget.setId(id);
         widget.setLastModified(new Date());
 
         var replaceIndex = storage.indexOf(

@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,7 +79,7 @@ public class WidgetControllerTest {
         widget.setxCoord(7);
         body =  mapper.writeValueAsString(widget);
 
-        mockMvc.perform(post("/widget/update")
+        mockMvc.perform(put("/widget/update/{id}",widget.getId())
                 .content(body)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -91,9 +92,7 @@ public class WidgetControllerTest {
         repository.deleteAll();
 
         var widget = new Widget(1, 1, 1, 1, 1);
-        widget.setId(UUID.randomUUID().toString());
-        widget.setLastModified(new Date());
-        var body =  mapper.writeValueAsString(widget);
+        var body = mapper.writeValueAsString(widget);
 
         mockMvc.perform(post("/widget/update")
                 .content(body)
@@ -105,10 +104,20 @@ public class WidgetControllerTest {
     public void testUpdateNullAttr() throws Exception {
         repository.deleteAll();
 
-        var widget = new Widget();
-        var body =  mapper.writeValueAsString(widget);
+        var widget = new Widget(1, 1, 1, 1, 1);
+        var body = mapper.writeValueAsString(widget);
 
-        mockMvc.perform(post("/widget/update")
+        var resp = mockMvc.perform(post("/widget/create")
+                .content(body)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        widget = mapper.readValue(resp,Widget.class);
+        widget.setHeight(null);
+
+        mockMvc.perform(put("/widget/update/{id}",widget.getId())
                 .content(body)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
@@ -131,7 +140,7 @@ public class WidgetControllerTest {
         widget = mapper.readValue(resp,Widget.class);
 
         mockMvc.perform(get("/widget/find/{id}",widget.getId())
-                .queryParam("db","true")
+                .header("db","true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(widget.getId())));
@@ -141,6 +150,7 @@ public class WidgetControllerTest {
     @Test
     public void testFindMany() throws Exception {
         repository.deleteAll();
+        Thread.sleep(5000);
 
         var widget = new Widget(1, 1, 1, 1, 1);
         var body = mapper.writeValueAsString(widget);
@@ -157,7 +167,7 @@ public class WidgetControllerTest {
         mockMvc.perform(get("/widget/find_many")
                 .queryParam("offset","0")
                 .queryParam("limit","3")
-                .queryParam("db","true")
+                .header("db","true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$",hasSize(2)));
@@ -166,6 +176,7 @@ public class WidgetControllerTest {
     @Test
     public void testFindManyDefaultLimit() throws Exception {
         repository.deleteAll();
+        Thread.sleep(5000);
 
         var widget = new Widget(1, 1, 1, 1, 1);
         var body = mapper.writeValueAsString(widget);
@@ -181,7 +192,7 @@ public class WidgetControllerTest {
 
         mockMvc.perform(get("/widget/find_many")
                 .queryParam("offset","0")
-                .queryParam("db","true")
+                .header("db","true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$",hasSize(2)));
@@ -189,8 +200,9 @@ public class WidgetControllerTest {
 
 
     @Test
-    public void testFindManFilter() throws Exception {
+    public void testFindFiltered() throws Exception {
         repository.deleteAll();
+        Thread.sleep(5000);
 
         var widget = new Widget(50, 50, 1, 100, 100);
         var body = mapper.writeValueAsString(widget);
@@ -207,9 +219,9 @@ public class WidgetControllerTest {
         var filterBody = mapper.writeValueAsString(filter);
 
 
-        mockMvc.perform(get("/widget/find_many")
+        mockMvc.perform(get("/widget/find_filtered")
                 .queryParam("offset","0")
-                .queryParam("db","true")
+                .header("db","true")
                 .content(filterBody)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -223,7 +235,7 @@ public class WidgetControllerTest {
         mockMvc.perform(get("/widget/find_many")
                 .queryParam("offset","0")
                 .queryParam("limit","600")
-                .queryParam("db","true")
+                .header("db","true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
