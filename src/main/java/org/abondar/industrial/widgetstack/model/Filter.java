@@ -20,7 +20,7 @@ public class Filter {
         this.xStart = xStart;
     }
 
-    public int getyStart() {
+    public int getYStart() {
         return yStart;
     }
 
@@ -28,7 +28,7 @@ public class Filter {
         this.yStart = yStart;
     }
 
-    public int getxStop() {
+    public int getXStop() {
         return xStop;
     }
 
@@ -36,7 +36,7 @@ public class Filter {
         this.xStop = xStop;
     }
 
-    public int getyStop() {
+    public int getYStop() {
         return yStop;
     }
 

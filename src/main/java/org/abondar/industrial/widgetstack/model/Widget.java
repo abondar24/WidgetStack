@@ -1,12 +1,9 @@
 package org.abondar.industrial.widgetstack.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.util.Date;
@@ -67,27 +64,27 @@ public class Widget implements Comparable<Widget>{
         this.id = id;
     }
 
-    public Integer getxCoord() {
+    public Integer getXCoord() {
         return xCoord;
     }
 
-    public void setxCoord(Integer xCoord) {
+    public void setXCoord(Integer xCoord) {
         this.xCoord = xCoord;
     }
 
-    public Integer getyCoord() {
+    public Integer getYCoord() {
         return yCoord;
     }
 
-    public void setyCoord(Integer yCoord) {
+    public void setYCoord(Integer yCoord) {
         this.yCoord = yCoord;
     }
 
-    public Integer getzIndex() {
+    public Integer getZIndex() {
         return zIndex;
     }
 
-    public void setzIndex(Integer zIndex) {
+    public void setZIndex(Integer zIndex) {
         this.zIndex = zIndex;
     }
 
@@ -125,6 +122,6 @@ public class Widget implements Comparable<Widget>{
 
     @Override
     public int compareTo(Widget w) {
-        return this.zIndex-w.getzIndex();
+        return this.zIndex-w.getZIndex();
     }
 }

@@ -12,15 +12,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,15 +32,25 @@ public class WidgetService {
     private final Lock readLock = rwLock.readLock();
     private final Lock writeLock = rwLock.writeLock();
 
-    @Value("${db-store}")
-    private boolean dbStore;
+    private static final List<Function<Widget, Object>> NOT_NULL_FIELDS = List.of(
+            Widget::getId,
+            Widget::getHeight,
+            Widget::getWidth,
+            Widget::getZIndex,
+            Widget::getXCoord,
+            Widget::getYCoord,
+            Widget::getLastModified
+    );
+
+
+    private final boolean dbStore;
 
 
     @Autowired
-    public WidgetService(WidgetRepository repository) {
+    public WidgetService(WidgetRepository repository, @Value("${db-store}") boolean dbStore) {
         this.repository = repository;
-        this.storage = Collections
-                .synchronizedMap(new LinkedHashMap<>(500, .75f, true));
+        this.dbStore = dbStore;
+        this.storage = new ConcurrentHashMap<>();
 
     }
 
@@ -51,8 +61,8 @@ public class WidgetService {
             widget.setId(uuid);
             widget.setLastModified(new Date());
 
-            if (widget.getzIndex() == null) {
-                widget.setzIndex(getMaxZindex());
+            if (widget.getZIndex() == null) {
+                widget.setZIndex(getMaxZIndex());
             }
 
             fillStorage(widget);
@@ -68,75 +78,62 @@ public class WidgetService {
 
     }
 
-    private  synchronized Integer getMaxZindex() {
-        return storage.isEmpty() ? Integer.MAX_VALUE : storage.values()
+    private Integer getMaxZIndex() {
+        return storage.values()
                 .stream()
                 .max(java.util.Comparator.naturalOrder())
-                .get()
-                .getzIndex() + 1;
+                .map(w -> w.getZIndex() + 1)
+                .orElse(Integer.MAX_VALUE);
+
     }
 
-    private  synchronized void fillStorage(Widget widget) {
+    private void fillStorage(Widget widget) {
+        storage.values().stream()
+                .filter(v -> v.getZIndex() >= widget.getZIndex())
+                .forEach(v -> v.setZIndex(v.getZIndex() + 1));
         storage.put(widget.getId(), widget);
-        if (storage.size()>1) {
-            storage.forEach((k,v)->{
-                var oldZIndex = v.getzIndex();
-                if (oldZIndex>=widget.getzIndex() && !v.getId().equals(widget.getId())){
-                    v.setzIndex(oldZIndex + 1);
-                }
-            });
-        }
+
+
     }
 
 
-    public synchronized Widget update(Widget widget, String id) throws WidgetNotFoundException, NullAtrributeException {
-        checkWidget(widget);
+    public Widget update(Widget widget, String id) throws WidgetNotFoundException, NullAtrributeException {
+        readLock.lock();
+        try {
+            checkWidget(widget);
 
-        if (storage.get(id) == null) {
-            throw new WidgetNotFoundException(widget.getId());
+            if (storage.get(id) == null) {
+                throw new WidgetNotFoundException(widget.getId());
+            }
+        } finally {
+            readLock.unlock();
         }
 
-        widget.setId(id);
-        widget.setLastModified(new Date());
+        writeLock.lock();
+        try {
+            widget.setId(id);
+            widget.setLastModified(new Date());
 
-        storage.replace(id, widget);
-        if (dbStore) {
-            repository.save(widget);
+            storage.replace(id, widget);
+            if (dbStore) {
+                repository.save(widget);
+            }
+
+            return new Widget(widget);
+        } finally {
+            writeLock.unlock();
         }
 
-        return new Widget(widget);
     }
+
 
     private synchronized void checkWidget(Widget widget) throws NullAtrributeException {
-        if (widget.getId() == null) {
+        if (NOT_NULL_FIELDS.stream().anyMatch(g -> g.apply(widget) == null)) {
             throw new NullAtrributeException();
         }
-
-        if (widget.getHeight() == null) {
-            throw new NullAtrributeException();
-        }
-
-        if (widget.getWidth() == null) {
-            throw new NullAtrributeException();
-        }
-
-        if (widget.getLastModified() == null) {
-            throw new NullAtrributeException();
-        }
-
-        if (widget.getxCoord() == null) {
-            throw new NullAtrributeException();
-        }
-
-        if (widget.getyCoord() == null) {
-            throw new NullAtrributeException();
-        }
-
-        if (widget.getzIndex() == null) {
-            throw new NullAtrributeException();
-        }
-
     }
+
+
 
     public Widget getById(String id, boolean fromDb) {
         readLock.lock();
@@ -177,7 +174,7 @@ public class WidgetService {
     }
 
     public List<Widget> getFilteredWidgets(int offset, int limit, boolean fromDb, Filter filter) throws TooManyWidgetsException {
-       readLock.lock();
+        readLock.lock();
         try {
             return getWidgets(offset, limit, fromDb)
                     .stream()
@@ -192,12 +189,12 @@ public class WidgetService {
 
     private synchronized boolean matchesFilter(Filter filter, Widget widget) {
 
-        var fWidth = filter.getxStop() - filter.getyStart();
-        var fHeight = filter.getyStop() - filter.getyStart();
+        var fWidth = filter.getXStop() - filter.getYStart();
+        var fHeight = filter.getYStop() - filter.getYStart();
 
         return widget.getWidth() <= fWidth && widget.getHeight() <= fHeight &&
-                filter.getxStop() > widget.getxCoord() &&
-                filter.getyStop() > widget.getyCoord();
+                filter.getXStop() > widget.getXCoord() &&
+                filter.getYStop() > widget.getYCoord();
 
     }
 
@@ -208,34 +205,27 @@ public class WidgetService {
 
             return repository
                     .findAll(page)
-                    .get()
-                    .collect(Collectors.toList());
+                    .getContent();
         } finally {
             readLock.unlock();
         }
     }
 
     private List<Widget> getWidgetsFromStorage(int offset, int limit) {
-        readLock.lock();
-        try {
             return storage.values()
                     .stream()
                     .sorted(Widget::compareTo)
                     .skip(offset)
                     .limit(limit)
                     .collect(Collectors.toList());
-        } finally {
-            readLock.unlock();
-        }
-
     }
 
 
     public void delete(String id) throws WidgetNotFoundException {
         writeLock.lock();
         try {
-            var widget = storage.get(id);
-            if (widget == null) {
+            var widget = storage.remove(id);
+            if (widget==null) {
                 throw new WidgetNotFoundException(id);
             }
 
