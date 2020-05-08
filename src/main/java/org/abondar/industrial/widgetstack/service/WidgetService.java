@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +28,10 @@ public class WidgetService {
 
     private final WidgetRepository repository;
     private final Map<String, Widget> storage;
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final Lock readLock = rwLock.readLock();
+    private final Lock writeLock = rwLock.writeLock();
+
     @Value("${db-store}")
     private boolean dbStore;
 
@@ -38,34 +44,39 @@ public class WidgetService {
 
     }
 
-    public synchronized Widget create(Widget widget) {
-        var uuid = UUID.randomUUID().toString();
-        widget.setId(uuid);
-        widget.setLastModified(new Date());
+    public Widget create(Widget widget) {
+        writeLock.lock();
+        try {
+            var uuid = UUID.randomUUID().toString();
+            widget.setId(uuid);
+            widget.setLastModified(new Date());
 
-        if (widget.getzIndex() == null) {
-            widget.setzIndex(getMaxZindex());
+            if (widget.getzIndex() == null) {
+                widget.setzIndex(getMaxZindex());
+            }
+
+            fillStorage(widget);
+
+            if (dbStore) {
+                repository.save(widget);
+            }
+
+            return new Widget(widget);
+        } finally {
+            writeLock.unlock();
         }
 
-        fillStorage(widget);
-
-        if (dbStore) {
-            repository.save(widget);
-        }
-
-
-        return new Widget(widget);
     }
 
-    private Integer getMaxZindex() {
+    private  synchronized Integer getMaxZindex() {
         return storage.isEmpty() ? Integer.MAX_VALUE : storage.values()
                 .stream()
-                .min(java.util.Comparator.naturalOrder())
+                .max(java.util.Comparator.naturalOrder())
                 .get()
                 .getzIndex() + 1;
     }
 
-    private void fillStorage(Widget widget) {
+    private  synchronized void fillStorage(Widget widget) {
         storage.put(widget.getId(), widget);
         if (storage.size()>1) {
             storage.forEach((k,v)->{
@@ -96,7 +107,7 @@ public class WidgetService {
         return new Widget(widget);
     }
 
-    private void checkWidget(Widget widget) throws NullAtrributeException {
+    private synchronized void checkWidget(Widget widget) throws NullAtrributeException {
         if (widget.getId() == null) {
             throw new NullAtrributeException();
         }
@@ -128,42 +139,58 @@ public class WidgetService {
     }
 
     public Widget getById(String id, boolean fromDb) {
-
-        if (dbStore && fromDb) {
-            Optional<Widget> res = repository.findById(id);
-            if (res.isPresent()) {
-                return res.get();
+        readLock.lock();
+        try {
+            if (dbStore && fromDb) {
+                Optional<Widget> res = repository.findById(id);
+                if (res.isPresent()) {
+                    return res.get();
+                }
             }
+
+            return storage.get(id);
+        } finally {
+            readLock.unlock();
         }
 
-        return storage.get(id);
     }
 
     public List<Widget> getWidgets(int offset, int limit, boolean fromDb) throws TooManyWidgetsException {
-        int maxLimit = 500;
-        if (limit > maxLimit) {
-            throw new TooManyWidgetsException();
-        }
-
-        if (dbStore && fromDb) {
-            var res = getWidgetsFromDb(offset, limit);
-            if (!res.isEmpty()) {
-                return res;
+        readLock.lock();
+        try {
+            int maxLimit = 500;
+            if (limit > maxLimit) {
+                throw new TooManyWidgetsException();
             }
 
+            if (dbStore && fromDb) {
+                var res = getWidgetsFromDb(offset, limit);
+                if (!res.isEmpty()) {
+                    return res;
+                }
+            }
+            return getWidgetsFromStorage(offset, limit);
+        } finally {
+            readLock.unlock();
         }
-        return getWidgetsFromStorage(offset, limit);
+
     }
 
     public List<Widget> getFilteredWidgets(int offset, int limit, boolean fromDb, Filter filter) throws TooManyWidgetsException {
-        return getWidgets(offset, limit, fromDb)
-                .stream()
-                .filter(wd -> matchesFilter(filter, wd))
-                .collect(Collectors.toList());
+       readLock.lock();
+        try {
+            return getWidgets(offset, limit, fromDb)
+                    .stream()
+                    .filter(wd -> matchesFilter(filter, wd))
+                    .collect(Collectors.toList());
+        } finally {
+            readLock.unlock();
+        }
+
 
     }
 
-    private boolean matchesFilter(Filter filter, Widget widget) {
+    private synchronized boolean matchesFilter(Filter filter, Widget widget) {
 
         var fWidth = filter.getxStop() - filter.getyStart();
         var fHeight = filter.getyStop() - filter.getyStart();
@@ -175,36 +202,51 @@ public class WidgetService {
     }
 
     private List<Widget> getWidgetsFromDb(int offset, int limit) {
-        var page = PageRequest.of(offset, limit, Sort.by("zIndex").ascending());
+        readLock.lock();
+        try {
+            var page = PageRequest.of(offset, limit, Sort.by("zIndex").ascending());
 
-        return repository
-                .findAll(page)
-                .get()
-                .collect(Collectors.toList());
-
+            return repository
+                    .findAll(page)
+                    .get()
+                    .collect(Collectors.toList());
+        } finally {
+            readLock.unlock();
+        }
     }
 
     private List<Widget> getWidgetsFromStorage(int offset, int limit) {
+        readLock.lock();
+        try {
+            return storage.values()
+                    .stream()
+                    .sorted(Widget::compareTo)
+                    .skip(offset)
+                    .limit(limit)
+                    .collect(Collectors.toList());
+        } finally {
+            readLock.unlock();
+        }
 
-        return storage.values()
-                .stream()
-                .sorted(Widget::compareTo)
-                .skip(offset)
-                .limit(limit)
-                .collect(Collectors.toList());
     }
 
 
-    public synchronized void delete(String id) throws WidgetNotFoundException {
-        var widget = storage.get(id);
-        if (widget == null) {
-            throw new WidgetNotFoundException(id);
+    public void delete(String id) throws WidgetNotFoundException {
+        writeLock.lock();
+        try {
+            var widget = storage.get(id);
+            if (widget == null) {
+                throw new WidgetNotFoundException(id);
+            }
+
+            storage.remove(id);
+            if (dbStore) {
+                repository.delete(widget);
+            }
+        } finally {
+            writeLock.unlock();
         }
 
-        storage.remove(id);
-        if (dbStore) {
-            repository.delete(widget);
-        }
     }
 
 

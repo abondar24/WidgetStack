@@ -38,10 +38,9 @@ public class StorageTest {
 
     @Test
     public void findMaxTest() {
-        var res = storage
-                .values()
+        var res =  storage.isEmpty() ? Integer.MAX_VALUE : storage.values()
                 .stream()
-                .min(java.util.Comparator.naturalOrder())
+                .max(java.util.Comparator.naturalOrder())
                 .get()
                 .getzIndex() + 1;
 
