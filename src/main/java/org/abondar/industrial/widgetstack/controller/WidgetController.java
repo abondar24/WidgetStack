@@ -1,12 +1,12 @@
 package org.abondar.industrial.widgetstack.controller;
 
-import org.abondar.industrial.widgetstack.controller.rate.RateLimit;
 import org.abondar.industrial.widgetstack.exception.NullAtrributeException;
 import org.abondar.industrial.widgetstack.exception.TooManyWidgetsException;
 import org.abondar.industrial.widgetstack.exception.WidgetNotFoundException;
 import org.abondar.industrial.widgetstack.model.Filter;
 import org.abondar.industrial.widgetstack.model.Widget;
 import org.abondar.industrial.widgetstack.service.WidgetService;
+import org.abondar.spring.ratelimitter.RateLimit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,7 +47,6 @@ public class WidgetController {
     }
 
     @GetMapping(path = "/find/{id}")
-
     public ResponseEntity<Widget> findWidget(@PathVariable String id,
                                              @RequestHeader(name = "db") boolean fromDb) {
         var res = service.getById(id, fromDb);

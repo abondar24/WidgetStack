@@ -1,5 +1,6 @@
 package org.abondar.industrial.widgetstack.exception;
 
+import org.abondar.spring.ratelimitter.RateLimitException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

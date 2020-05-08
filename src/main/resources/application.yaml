@@ -19,3 +19,7 @@ spring:
      baseline-on-migrate: true
      check-location: true
      locations: classpath:/META-INF/db/migration
+
+controller:
+  package: org.abondar.industrial.widgetstack.controller
+
