@@ -34,26 +34,26 @@ public class WidgetController {
         this.service = service;
     }
 
-    @PostMapping(path = "/create")
+    @PostMapping
     public ResponseEntity<Widget> createWidget(@RequestBody Widget widget) {
         var res = service.create(widget);
         return ResponseEntity.ok(res);
     }
 
-    @PutMapping(path = "/update/{id}")
+    @PutMapping(path = "/{id}")
     public ResponseEntity<Widget> updateWidget(@PathVariable String id, @RequestBody Widget widget) throws WidgetNotFoundException, NullAtrributeException {
         var res = service.update(widget, id);
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping(path = "/find/{id}")
+    @GetMapping(path = "/{id}")
     public ResponseEntity<Widget> findWidget(@PathVariable String id,
                                              @RequestHeader(name = "db") boolean fromDb) {
         var res = service.getById(id, fromDb);
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping(path = "/find_many")
+    @GetMapping(path = "/many")
     @RateLimit(requests = 3, period = 5000)
     public ResponseEntity<List<Widget>> findWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
@@ -66,7 +66,7 @@ public class WidgetController {
     }
 
 
-    @GetMapping(path = "/find_filtered")
+    @GetMapping(path = "/filtered")
     public ResponseEntity<List<Widget>> findFilteredWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
                                                     @RequestHeader(name = "db") boolean fromDb,
@@ -78,7 +78,7 @@ public class WidgetController {
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping(path = "/delete")
+    @DeleteMapping
     public void delete(@RequestParam String id) throws WidgetNotFoundException {
         service.delete(id);
     }
