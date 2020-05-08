@@ -55,8 +55,8 @@ public class WidgetServiceDbTest {
         var res = service.create(widget);
         when(repository.save(res)).thenReturn(res);
 
-        res.setxCoord(3);
-        res.setyCoord(4);
+        res.setXCoord(3);
+        res.setYCoord(4);
         service.update(res,res.getId());
 
         verify(repository, times(1)).save(widget);
@@ -92,11 +92,11 @@ public class WidgetServiceDbTest {
         var pageRes = new PageImpl<>(widgets);
         when(repository.findAll(any(PageRequest.class))).thenReturn(pageRes);
 
-        assertEquals(widget.getzIndex(), pageRes
+        assertEquals(widget.getZIndex(), pageRes
                 .get()
                 .collect(Collectors.toList())
                 .get(0)
-                .getzIndex());
+                .getZIndex());
 
     }
 

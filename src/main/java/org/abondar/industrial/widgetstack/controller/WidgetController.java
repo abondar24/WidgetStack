@@ -66,7 +66,7 @@ public class WidgetController {
     }
 
 
-    @GetMapping(path = "/filtered")
+    @GetMapping(path = "/filter")
     public ResponseEntity<List<Widget>> findFilteredWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
                                                     @RequestHeader(name = "db") boolean fromDb,

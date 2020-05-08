@@ -10,9 +10,8 @@ public class Filter {
 
     private int yStop;
 
-    public Filter(){}
 
-    public int getxStart() {
+    public int getXStart() {
         return xStart;
     }
 
@@ -24,7 +23,7 @@ public class Filter {
         return yStart;
     }
 
-    public void setyStart(int yStart) {
+    public void setYStart(int yStart) {
         this.yStart = yStart;
     }
 
@@ -32,7 +31,7 @@ public class Filter {
         return xStop;
     }
 
-    public void setxStop(int xStop) {
+    public void setXStop(int xStop) {
         this.xStop = xStop;
     }
 
@@ -40,7 +39,7 @@ public class Filter {
         return yStop;
     }
 
-    public void setyStop(int yStop) {
+    public void setYStop(int yStop) {
         this.yStop = yStop;
     }
 }

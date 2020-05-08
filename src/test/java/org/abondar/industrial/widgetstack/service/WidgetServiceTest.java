@@ -34,7 +34,7 @@ public class WidgetServiceTest {
 
         assertNotNull(widget.getId());
         assertNotNull(widget.getLastModified());
-        assertEquals(1, widget.getzIndex());
+        assertEquals(1, widget.getZIndex());
     }
 
     @Test
@@ -47,7 +47,7 @@ public class WidgetServiceTest {
         var widget1 = new Widget(1, 1, null, 1, 1);
         widget1 = service.create(widget1);
 
-        assertEquals(2, widget1.getzIndex());
+        assertEquals(2, widget1.getZIndex());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class WidgetServiceTest {
 
         widget = service.create(widget);
 
-        assertEquals(Integer.MAX_VALUE, widget.getzIndex());
+        assertEquals(Integer.MAX_VALUE, widget.getZIndex());
     }
 
 
@@ -70,7 +70,7 @@ public class WidgetServiceTest {
         widget = service.create(widget);
 
         var res = service.getById(widget.getId(), false);
-        assertEquals(widget.getzIndex(), res.getzIndex());
+        assertEquals(widget.getZIndex(), res.getZIndex());
     }
 
     @Test
@@ -82,13 +82,13 @@ public class WidgetServiceTest {
 
         var creationDate = widget.getLastModified();
 
-        widget.setxCoord(3);
-        widget.setyCoord(4);
+        widget.setXCoord(3);
+        widget.setYCoord(4);
         Thread.sleep(300);
         widget = service.update(widget,widget.getId());
 
-        assertEquals(3, widget.getxCoord());
-        assertEquals(4, widget.getyCoord());
+        assertEquals(3, widget.getXCoord());
+        assertEquals(4, widget.getYCoord());
         assertNotEquals(creationDate, widget.getLastModified());
 
     }
@@ -100,7 +100,7 @@ public class WidgetServiceTest {
         var widget = new Widget(1, 1, 1, 1, 1);
         var res = service.create(widget);
 
-        res.setxCoord(null);
+        res.setXCoord(null);
         assertThrows(NullAtrributeException.class, () -> service.update(res,res.getId()));
     }
 
@@ -127,10 +127,10 @@ public class WidgetServiceTest {
 
         assertEquals(2, res.size());
 
-        assertEquals(1, res.get(0).getzIndex());
+        assertEquals(1, res.get(0).getZIndex());
         assertEquals(widget1.getId(), res.get(0).getId());
 
-        assertEquals(2, res.get(1).getzIndex());
+        assertEquals(2, res.get(1).getZIndex());
         assertEquals(widget.getId(), res.get(1).getId());
 
     }
@@ -150,15 +150,15 @@ public class WidgetServiceTest {
 
         var filter = new Filter();
         filter.setxStart(0);
-        filter.setxStop(100);
-        filter.setyStart(0);
-        filter.setyStop(150);
+        filter.setXStop(100);
+        filter.setYStart(0);
+        filter.setYStop(150);
 
         var res = service.getFilteredWidgets(0, 3, false,filter);
 
         assertEquals(2, res.size());
-        assertEquals(100, res.get(0).getyCoord());
-        assertEquals(50, res.get(1).getyCoord());
+        assertEquals(100, res.get(0).getYCoord());
+        assertEquals(50, res.get(1).getYCoord());
 
     }
 
@@ -176,7 +176,7 @@ public class WidgetServiceTest {
 
         assertEquals(1, res.size());
 
-        assertEquals(2, res.get(0).getzIndex());
+        assertEquals(2, res.get(0).getZIndex());
         assertEquals(widget.getId(), res.get(0).getId());
 
     }

@@ -15,6 +15,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 
+import java.util.Date;
+
 import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -74,7 +76,7 @@ public class WidgetControllerTest {
 
         widget = mapper.readValue(resp,Widget.class);
 
-        widget.setxCoord(7);
+        widget.setXCoord(7);
         body =  mapper.writeValueAsString(widget);
 
         mockMvc.perform(put("/widget/{id}",widget.getId())
@@ -90,9 +92,12 @@ public class WidgetControllerTest {
         repository.deleteAll();
 
         var widget = new Widget(1, 1, 1, 1, 1);
+        widget.setId("test");
+        widget.setLastModified(new Date());
+
         var body = mapper.writeValueAsString(widget);
 
-        mockMvc.perform(post("/widget")
+        mockMvc.perform(put("/widget/{id}","test")
                 .content(body)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
@@ -211,13 +216,13 @@ public class WidgetControllerTest {
 
         var filter = new Filter();
         filter.setxStart(0);
-        filter.setxStop(100);
-        filter.setyStart(0);
-        filter.setyStop(150);
+        filter.setXStop(100);
+        filter.setYStart(0);
+        filter.setYStop(150);
         var filterBody = mapper.writeValueAsString(filter);
 
 
-        mockMvc.perform(get("/widget/filtered")
+        mockMvc.perform(get("/widget/filter")
                 .queryParam("offset","0")
                 .header("db","true")
                 .content(filterBody)
