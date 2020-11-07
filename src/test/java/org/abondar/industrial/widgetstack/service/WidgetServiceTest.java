@@ -149,7 +149,7 @@ public class WidgetServiceTest {
         service.create(widget2);
 
         var filter = new Filter();
-        filter.setxStart(0);
+        filter.setXStart(0);
         filter.setXStop(100);
         filter.setYStart(0);
         filter.setYStop(150);

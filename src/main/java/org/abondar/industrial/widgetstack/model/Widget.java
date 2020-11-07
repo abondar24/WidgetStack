@@ -1,6 +1,11 @@
 package org.abondar.industrial.widgetstack.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,6 +15,11 @@ import java.util.Date;
 
 @Entity
 @Table(name = "widget")
+@Getter
+@Setter
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode
 public class Widget implements Comparable<Widget>{
 
     @Id
@@ -54,71 +64,6 @@ public class Widget implements Comparable<Widget>{
         this.lastModified = widget.lastModified;
     }
 
-   public Widget(){}
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Integer getXCoord() {
-        return xCoord;
-    }
-
-    public void setXCoord(Integer xCoord) {
-        this.xCoord = xCoord;
-    }
-
-    public Integer getYCoord() {
-        return yCoord;
-    }
-
-    public void setYCoord(Integer yCoord) {
-        this.yCoord = yCoord;
-    }
-
-    public Integer getZIndex() {
-        return zIndex;
-    }
-
-    public void setZIndex(Integer zIndex) {
-        this.zIndex = zIndex;
-    }
-
-    public Integer getWidth() {
-        return width;
-    }
-
-    public void setWidth(Integer width) {
-        this.width = width;
-    }
-
-    public Integer getHeight() {
-        return height;
-    }
-
-    public void setHeight(Integer height) {
-        this.height = height;
-    }
-
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    @Override
-    public String toString() {
-        return "Widget{" +
-                "id='" + id + '\'' +
-                ", zIndex=" + zIndex +
-                '}';
-    }
 
     @Override
     public int compareTo(Widget w) {
