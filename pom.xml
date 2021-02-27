@@ -37,12 +37,6 @@
             <version>3.0.0</version>
         </dependency>
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.github.abondar24</groupId>
             <artifactId>SpringRateLimitter</artifactId>
             <version>0.0.1</version>

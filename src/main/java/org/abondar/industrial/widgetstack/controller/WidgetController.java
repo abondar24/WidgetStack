@@ -8,6 +8,8 @@ import org.abondar.industrial.widgetstack.model.Widget;
 import org.abondar.industrial.widgetstack.service.WidgetService;
 import org.abondar.spring.ratelimitter.RateLimit;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,26 +36,26 @@ public class WidgetController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json",produces ="application/json")
     public ResponseEntity<Widget> createWidget(@RequestBody Widget widget) {
         var res = service.create(widget);
         return ResponseEntity.ok(res);
     }
 
-    @PutMapping(path = "/{id}")
+    @PutMapping(path = "/{id}",consumes = "application/json",produces ="application/json")
     public ResponseEntity<Widget> updateWidget(@PathVariable String id, @RequestBody Widget widget) throws WidgetNotFoundException, NullAtrributeException {
         var res = service.update(widget, id);
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping(path = "/{id}")
+    @GetMapping(path = "/{id}",produces ="application/json")
     public ResponseEntity<Widget> findWidget(@PathVariable String id,
                                              @RequestHeader(name = "db") boolean fromDb) {
         var res = service.getById(id, fromDb);
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping(path = "/many")
+    @GetMapping(path = "/many",produces ="application/json")
     @RateLimit(requests = 3, period = 5000)
     public ResponseEntity<List<Widget>> findWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
@@ -66,7 +68,7 @@ public class WidgetController {
     }
 
 
-    @GetMapping(path = "/filter")
+    @GetMapping(path = "/filter",produces ="application/json")
     public ResponseEntity<List<Widget>> findFilteredWidgets(@RequestParam int offset,
                                                     @RequestParam(defaultValue = "10") int limit,
                                                     @RequestHeader(name = "db") boolean fromDb,
@@ -78,7 +80,7 @@ public class WidgetController {
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(path = "/{id}",produces ="application/json")
     public void delete(@PathVariable String id) throws WidgetNotFoundException {
         service.delete(id);
     }

@@ -12,7 +12,9 @@ A Z-index is a unique sequence common to all widgets that determines the order o
 lies on the plane.
 
 ## API
-Check Swagger UI: http://localhost:8024/swagger-ui.html
+
+- API DOC: http://localhost:8024/v2/api-docs
+- Check Swagger UI: http://localhost:8024/swagger-ui/index.html
 
 ## Build and Run
 
