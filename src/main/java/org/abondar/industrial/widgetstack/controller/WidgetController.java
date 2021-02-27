@@ -78,8 +78,8 @@ public class WidgetController {
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping
-    public void delete(@RequestParam String id) throws WidgetNotFoundException {
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) throws WidgetNotFoundException {
         service.delete(id);
     }
 }
